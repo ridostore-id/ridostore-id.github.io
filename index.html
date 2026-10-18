@@ -50,6 +50,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .mu{color:var(--mu);font-size:13px}svg text{fill:var(--mu);font-size:9px}
 #pv{font-weight:700;margin-top:10px}#ph{max-width:100%;max-height:140px;border-radius:10px;margin-top:6px}
 #login{position:fixed;inset:0;background:var(--bg);z-index:30;display:flex;align-items:center;justify-content:center;padding:20px}#login[hidden]{display:none}#login .card{width:min(380px,100%)}#lmsg{font-size:13px;color:var(--rd);margin:10px 0 0;min-height:18px}
+.rf{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ac);word-break:break-all;margin:3px 0;cursor:pointer}.act{display:flex;flex-direction:column;gap:4px}
 </style>
 </head>
 <body>
@@ -69,7 +70,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 <div class="row"><div><label>Dari tanggal<input type="date" id="fd1"></label></div><div><label>Sampai tanggal<input type="date" id="fd2"></label></div></div>
 <button class="btn sec sm" id="rf" style="margin-top:10px">Reset filter</button>
 </div>
-<div class="tw card" style="padding:6px"><table><thead><tr><th>Tanggal</th><th>Akun</th><th>Status</th><th class="n">Laba/Rugi</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
+<div class="tw card" style="padding:6px"><table style="min-width:0"><thead><tr><th>Akun</th><th>Status</th><th class="n">Laba/Rugi</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
 <p class="mu" id="cnt"></p>
 </section>
 
@@ -182,12 +183,12 @@ function list(){
  const q=$('q').value.toLowerCase().trim(),g=$('fg').value,s=$('fs').value,a=$('fd1').value,b=$('fd2').value;
  const r=D.filter(t=>(!g||t.game===g)&&(!s||t.status===s)&&(!a||t.date>=a)&&(!b||t.date<=b)&&(!q||[t.name,t.game,t.ref,t.note].join(' ').toLowerCase().includes(q))).sort((x,y)=>x.date<y.date?1:-1);
  $('tb').innerHTML=r.length?r.map(t=>{const p=lb(t),l=t.status==='Terjual'?`<span class="${p<0?'neg':'pos'}">${p<0?'Rugi ':'+'}${rp(p)}</span>`:'<span class="mu">—</span>';
-  return `<tr><td>${t.date.split('-').reverse().join('/')}</td><td>${t.photo?`<img class="th" src="${t.photo}" alt="">`:''}<b>${esc(t.name)}</b><div class="mu">${esc(t.game)} · Beli ${rp(t.buy)} · Jual ${rp(fin(t))}</div></td><td><span class="bd ${t.status}">${t.status}</span></td><td class="n">${l}</td><td><button class="btn sec sm" data-e="${t.id}">Edit</button> <button class="btn red sm" data-d="${t.id}">Hapus</button></td></tr>`}).join(''):'<tr><td colspan="5" class="mu">Tidak ada transaksi.</td></tr>';
+  return `<tr><td>${t.photo?`<img class="th" src="${t.photo}" alt="">`:''}<b>${esc(t.name)}</b><div class="mu">${esc(t.game)} · ${t.date.split('-').reverse().join('/')}</div>${t.ref?`<div class="rf" data-c="${esc(t.ref)}">🆔 ${esc(t.ref)}</div>`:''}<div class="mu">Beli ${rp(t.buy)} · Jual ${rp(fin(t))}</div></td><td><span class="bd ${t.status}">${t.status}</span></td><td class="n">${l}</td><td><div class="act"><button class="btn sec sm" data-e="${t.id}">Edit</button><button class="btn red sm" data-d="${t.id}">Hapus</button></div></td></tr>`}).join(''):'<tr><td colspan="4" class="mu">Tidak ada transaksi.</td></tr>';
  $('cnt').textContent=r.length+' dari '+D.length+' transaksi';
 }
 ['q','fg','fs','fd1','fd2'].forEach(i=>$(i).oninput=list);
 $('rf').onclick=()=>{['q','fg','fs','fd1','fd2'].forEach(i=>$(i).value='');list()};
-$('tb').onclick=async e=>{const b=e.target.closest('button');if(!b)return;
+$('tb').onclick=async e=>{const c=e.target.closest('[data-c]');if(c){try{await navigator.clipboard.writeText(c.dataset.c);toast('ID disalin')}catch(x){toast('Tidak bisa menyalin')}return}const b=e.target.closest('button');if(!b)return;
  if(b.dataset.e)openForm(D.find(t=>t.id===b.dataset.e));
  if(b.dataset.d&&await ask('Hapus transaksi ini? Tindakan tidak bisa dibatalkan.')){D=D.filter(t=>t.id!==b.dataset.d);save();all();toast('Transaksi dihapus')}};
 
