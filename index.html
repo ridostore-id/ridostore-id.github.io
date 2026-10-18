@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Game Account Manager</title>
+<title>Rido Store</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#5b5bf0"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Rido Store">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#f4f6fb;--card:#fff;--tx:#161b2e;--mu:#6b7390;--bd:#e3e7f1;--ac:#5b5bf0;--ac2:#eef0ff;--gn:#12a05c;--rd:#e5484d;--bl:#2a7de1;--gy:#8a90a6;color-scheme:light;
@@ -53,7 +54,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 </head>
 <body>
 <main>
-<header><h1>🎮 Game Account Manager<small>Catat &amp; rekap jual beli akun game</small><small id="sync">💾 Penyimpanan lokal</small></h1><button class="btn sec sm" id="theme" aria-label="Ganti tema">🌓</button></header>
+<header><h1>🎮 Rido Store<small>Catat &amp; rekap jual beli akun game</small><small id="sync">💾 Penyimpanan lokal</small></h1><button class="btn sec sm" id="theme" aria-label="Ganti tema">🌓</button></header>
 <div id="warn" class="warn" hidden>Penyimpanan browser tidak tersedia di tampilan ini. Data akan hilang saat halaman ditutup. Ekspor CSV secara berkala.</div>
 
 <section id="p-dash">
@@ -103,7 +104,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 <button class="fab" id="add" aria-label="Tambah transaksi">+</button>
 <nav id="nav"><button data-p="dash" class="on"><b>📊</b>Dashboard</button><button data-p="tx"><b>🧾</b>Transaksi</button><button data-p="rk"><b>📈</b>Rekap</button><button data-p="dt"><b>💾</b>Data</button></nav>
 
-<div id="login" hidden><div class="card"><h1>🎮 Game Account Manager<small>Masuk untuk menyinkronkan data online</small></h1><label>Email<input id="le" type="email" autocomplete="email" autocapitalize="off"></label><label>Password<input id="lp" type="password" autocomplete="current-password"></label><div class="row" style="margin-top:12px"><button class="btn" id="lin">Masuk</button><button class="btn sec" id="lup">Daftar</button></div><p id="lmsg"></p></div></div>
+<div id="login" hidden><div class="card"><h1>🎮 Rido Store<small>Masuk untuk menyinkronkan data online</small></h1><label>Email<input id="le" type="email" autocomplete="email" autocapitalize="off"></label><label>Password<input id="lp" type="password" autocomplete="current-password"></label><div class="row" style="margin-top:12px"><button class="btn" id="lin">Masuk</button><button class="btn sec" id="lup">Daftar</button></div><p id="lmsg"></p></div></div>
 <dialog id="dlg"><div id="ft" style="font-weight:700;font-size:17px">Tambah transaksi</div>
 <div style="max-height:72vh;overflow-y:auto;padding-right:2px">
 <label>Tanggal<input type="date" id="f-date"></label>
@@ -291,6 +292,7 @@ function initCloud(){
   if(await pull()){cache();all();setSync('☁ Tersimpan online')}})}
 function all(){fgOpts();dash();list();rekap()}
 $('f-date').value=today();all();initCloud();
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
 </html>
