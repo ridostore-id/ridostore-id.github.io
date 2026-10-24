@@ -178,6 +178,7 @@ $('pill').onclick=showNav;
 $('eye').onclick=()=>{$('lp').type=$('lp').type==='password'?'text':'password'};
 const fd=d=>d.split('-').reverse().join('/'),num=i=>parseInt(String($(i).value).replace(/\D/g,''))||0,fmt=n=>n?String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'';
 const IC=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`;
+const SO={Tersedia:0,Terjual:1,Dibatalkan:2},ord=(a,b)=>(SO[a.status]-SO[b.status])||(a.date<b.date?1:a.date>b.date?-1:0);
 
 
 /* Dashboard */
@@ -188,7 +189,7 @@ function dash(){
  const S=[['Total modal',rp(modal),'wallet','a','Stok mengendap: '+rp(idle)],['Omzet penjualan',rp(om),'file','i','Dari akun berstatus Terjual'],[lab<0?'Rugi bersih':'Laba bersih (realisasi)',rp(lab),'up','g','Untung: '+rp(up)+' | Rugi: '+rp(ls),lab<0?'neg':'pos',1],['Akun tersedia',av.length+' Stok','pad','b','Siap dijual','',0,'Tersedia'],['Akun terjual',sold.length+' Unit','ok','g','Selesai terjual','',0,'Terjual'],['Total transaksi',D.length+' Data','layers','p',D.filter(t=>t.status==='Dibatalkan').length+' dibatalkan','',1,'ALL']];
  $('stats').innerHTML=S.map(x=>`<div class="card stat${x[6]?' w':''}"${x[7]?` data-go="${x[7]}"`:''}><div class="top"><span class="l">${x[0]}</span><span class="ib c-${x[3]}"><svg class="ic"><use href="#i-${x[2]}"/></svg></span></div><div class="v ${x[5]||''}">${x[1]}</div><div class="s">${x[4]}</div></div>`).join('');
  $('dsub').textContent=D.length+' transaksi · '+av.length+' stok tersedia · '+sold.length+' terjual';
- const rc=D.slice().sort((a,b)=>a.date<b.date?1:-1).slice(0,4);
+ const rc=D.slice().sort(ord).slice(0,4);
  $('stk').innerHTML=rc.length?rc.map(t=>{const f=fin(t),p=lb(t);return `<div class="sk" data-e="${t.id}"><div class="sc"><span class="gb">${esc(t.game)}</span> <span class="bd ${t.status}">${t.status}</span><b>${esc(t.name)}</b><div class="mu" style="font-size:11px">Modal ${rp(t.buy)} · ${fd(t.date)}</div></div><div class="rt"><b>${rp(f)}</b>${t.status==='Terjual'?`<div class="${p<0?'neg':'pos'}" style="font-size:12px;font-weight:700">${p<0?'':'+'}${rp(p)}</div>`:`<div class="mu" style="font-size:11px">Target</div>`}</div></div>`}).join(''):'<p class="mu" style="text-align:center">Belum ada data transaksi. Ketuk tombol + untuk mulai mencatat.</p>';
  chart($('ch1'),group(cmode));
 }
@@ -236,7 +237,7 @@ function card(t){const p=lb(t),f=fin(t);
  return `<div class="card"><div class="tr">${pic}<div class="tm"><div class="r1"><span><span class="gb">${esc(t.game)}</span> <span class="bd ${t.status}">${t.status}</span></span><span class="mu" style="font-size:11px">${IC('cal')} ${fd(t.date)}</span></div><h4>${esc(t.name)}</h4>${t.tag?`<div class="rf" data-c="${esc(t.tag)}">${esc(t.tag)}</div>`:''}${t.ref?`<div class="rf2" data-c="${esc(t.ref)}">${IC('mail')} ${esc(t.ref)}</div>`:''}${t.note?`<div class="mu nt">"${esc(t.note)}"</div>`:''}</div></div><div class="pr"><div><i>Harga beli (modal)</i><b>${rp(t.buy)}</b></div><div><i>Harga buka / jual</i><b>${rp(t.sell)}</b></div><div><i>${t.nego>0?'Harga deal nego':'Harga final'}</i><b class="ind">${rp(f)}</b></div></div><div class="ft"><div>${pl}</div><div class="ac">${t.status==='Tersedia'?`<button class="btn ok sm" data-s="${t.id}|Terjual">${IC('check')}Tandai terjual</button>`:t.status==='Terjual'?`<button class="btn sec sm" data-s="${t.id}|Tersedia">${IC('undo')}Ke stok</button>`:''}<button class="btn sec sm" data-e="${t.id}">${IC('pen')}Edit</button><button class="btn red sm" data-d="${t.id}">${IC('trash')}Hapus</button></div></div></div>`}
 function list(){
  const q=$('q').value.toLowerCase().trim(),g=$('fg').value,s=$('fs').value,a=$('fd1').value,b=$('fd2').value;
- const r=D.filter(t=>(!g||t.game===g)&&(!s||t.status===s)&&(!a||t.date>=a)&&(!b||t.date<=b)&&(!q||[t.name,t.game,t.ref,t.tag,t.note].join(' ').toLowerCase().includes(q))).sort((x,y)=>x.date<y.date?1:-1);
+ const r=D.filter(t=>(!g||t.game===g)&&(!s||t.status===s)&&(!a||t.date>=a)&&(!b||t.date<=b)&&(!q||[t.name,t.game,t.ref,t.tag,t.note].join(' ').toLowerCase().includes(q))).sort(ord);
  $('tb').innerHTML=r.length?r.map(card).join(''):'<div class="card mu" style="text-align:center;padding:28px"><b style="color:#d1d5db">Tidak ada transaksi yang cocok</b><br>Coba ubah kata kunci atau reset filter.</div>';
  $('cnt').textContent='Menampilkan '+r.length+' dari '+D.length+' transaksi';
  $('cpf').textContent='Laba filter: '+rp(r.reduce((a,t)=>a+lb(t),0));
