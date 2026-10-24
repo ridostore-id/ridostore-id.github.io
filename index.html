@@ -324,6 +324,7 @@ const LEG='gam_v1';let sb=null,uidv=null,cmap={},pushP=Promise.resolve();
 const sj=o=>JSON.stringify(o,Object.keys(o).sort()),plain=t=>JSON.parse(JSON.stringify(t));
 const setSync=m=>{const e=$('sync');e.textContent=m.replace(/^[^A-Za-z0-9]+/,'');e.className='bdg '+(m.startsWith('☁ Tersimpan')?'ok':m.startsWith('⚠')?'er':m.startsWith('☁')?'wt':'lc')};
 const cache=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){}};
+const saveBase=()=>{try{localStorage.setItem(K+'_b',JSON.stringify(cmap))}catch(e){}};
 function showLogin(m){$('login').hidden=false;$('so').hidden=true;$('lmsg').textContent=m||''}
 function push(){
  if(!sb||!uidv)return false;
@@ -331,11 +332,12 @@ function push(){
  D.forEach(t=>{const x=sj(t);cur[t.id]=1;if(x!==cmap[t.id])up.push({id:t.id,user_id:uidv,data:plain(t)})});
  Object.keys(cmap).forEach(id=>{if(!cur[id])del.push(id)});
  if(!up.length&&!del.length){pushP=Promise.resolve();return true}
+ if(!navigator.onLine){setSync('⚠ Offline: tersimpan di perangkat');pushP=Promise.reject(new Error('offline'));pushP.catch(()=>{});return true}
  setSync('☁ Menyinkronkan…');const jobs=[];
  if(up.length)jobs.push(sb.from('transactions').upsert(up,{onConflict:'user_id,id'}).then(r=>{if(r.error)throw r.error;up.forEach(x=>{cmap[x.id]=sj(x.data)})}));
  if(del.length)jobs.push(sb.from('transactions').delete().in('id',del).then(r=>{if(r.error)throw r.error;del.forEach(id=>{delete cmap[id]})}));
  pushP=Promise.all(jobs);
- pushP.then(()=>setSync('☁ Tersimpan online')).catch(e=>{setSync('⚠ Gagal sinkron, data aman di perangkat');toast('Sinkron gagal: '+((e&&e.message)||'coba lagi'))});
+ pushP.then(()=>{saveBase();setSync('☁ Tersimpan online')}).catch(e=>{setSync('⚠ Gagal sinkron, data aman di perangkat');toast('Sinkron gagal: '+((e&&e.message)||'coba lagi'))});
  return true}
 async function pull(){
  const r=await sb.from('transactions').select('id,data');
@@ -344,11 +346,17 @@ async function pull(){
 async function start(user){
  if(uidv===user.id)return;uidv=user.id;K=LEG+'_'+uidv;
  $('login').hidden=true;$('so').hidden=false;$('acct').textContent=user.email||'-';setSync('☁ Memuat…');
- if(!(await pull())){try{D=JSON.parse(localStorage.getItem(K)||'[]')}catch(e){D=[]}all();return}
+ try{localStorage.setItem('gam_last',uidv)}catch(e){}
+ let loc=[],base=null;try{loc=JSON.parse(localStorage.getItem(K)||'[]');const b=localStorage.getItem(K+'_b');base=b?JSON.parse(b):null}catch(e){}
+ if(!(await pull())){D=loc;all();return}
+ if(base){const by={},cm=cmap,lid=new Set(loc.map(t=>t.id));let pend=0;D.forEach(t=>{by[t.id]=t});
+  loc.forEach(t=>{const x=sj(t);if(x!==base[t.id]&&x!==cm[t.id]){by[t.id]=t;pend++}});
+  Object.keys(base).forEach(id=>{if(!lid.has(id)&&by[id]&&cm[id]===base[id]){delete by[id];pend++}});
+  if(pend){D=Object.values(by);push();try{await pushP}catch(e){}toast(pend+' perubahan offline diproses')}}
  let leg=[],done=null;const mk='gam_mig_'+uidv;
  try{leg=JSON.parse(localStorage.getItem(LEG)||'[]');done=localStorage.getItem(mk)}catch(e){}
  if(!done&&leg.length){const have=new Set(D.map(t=>t.id));D=D.concat(leg.filter(t=>!have.has(t.id)));push();try{await pushP;localStorage.setItem(mk,'1');localStorage.removeItem(LEG)}catch(e){}}
- cache();all();setSync('☁ Tersimpan online')}
+ cache();saveBase();all();if(!document.querySelector('#sync.er'))setSync('☁ Tersimpan online')}
 async function auth(up){
  const email=$('le').value.trim(),password=$('lp').value;
  if(!email||password.length<6){$('lmsg').textContent='Isi email dan password (minimal 6 karakter)';return}
@@ -357,16 +365,16 @@ async function auth(up){
  if(r.error){$('lmsg').textContent=r.error.message;return}
  if(up&&!r.data.session)$('lmsg').textContent='Pendaftaran berhasil. Cek email untuk konfirmasi, lalu tekan Masuk.'}
 function initCloud(){
- if(SB_URL.startsWith('ISI_')||!window.supabase){$('login').hidden=true;$('so').hidden=true;setSync('💾 Lokal saja');return}
+ if(SB_URL.startsWith('ISI_')||!window.supabase){$('login').hidden=true;$('so').hidden=true;let lu=null;try{lu=localStorage.getItem('gam_last')}catch(e){}
+  if(lu){K=LEG+'_'+lu;try{D=JSON.parse(localStorage.getItem(K)||'[]')}catch(e){D=[]}all();setSync('⚠ Offline: data terakhir dari perangkat');addEventListener('online',()=>location.reload())}else setSync('💾 Lokal saja');return}
  sb=supabase.createClient(SB_URL,SB_KEY);
  $('lf').onsubmit=e=>{e.preventDefault();auth(false)};$('fp').onclick=()=>forgot();$('cpw').onclick=()=>forgot($('acct').textContent);$('so').onclick=$('so2').onclick=()=>sb.auth.signOut();
  sb.auth.onAuthStateChange((ev,s)=>{if(ev==='PASSWORD_RECOVERY')setTimeout(()=>$('np').showModal(),0);
   if(s&&s.user)setTimeout(()=>start(s.user),0);
   else if(ev==='SIGNED_OUT'||ev==='INITIAL_SESSION'){uidv=null;K=LEG;D=[];cmap={};all();showLogin()}});
- document.addEventListener('visibilitychange',async()=>{
-  if(document.hidden||!uidv)return;
-  try{push();await pushP}catch(e){return}
-  if(await pull()){cache();all();setSync('☁ Tersimpan online')}})}
+ async function refresh(){if(!uidv||!navigator.onLine)return;try{push();await pushP}catch(e){return}if(await pull()){cache();saveBase();all();setSync('☁ Tersimpan online')}}
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});addEventListener('online',refresh);addEventListener('offline',()=>{if(uidv)setSync('⚠ Offline: perubahan disimpan di perangkat')})}
+
 function all(){fgOpts();dash();list();rekap()}
 $('f-date').value=today();all();initCloud();
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
