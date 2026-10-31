@@ -190,11 +190,11 @@ function dash(){
  $('stats').innerHTML=S.map(x=>`<div class="card stat${x[6]?' w':''}"${x[7]?` data-go="${x[7]}"`:''}><div class="top"><span class="l">${x[0]}</span><span class="ib c-${x[3]}"><svg class="ic"><use href="#i-${x[2]}"/></svg></span></div><div class="v ${x[5]||''}">${x[1]}</div><div class="s">${x[4]}</div></div>`).join('');
  $('dsub').textContent=D.length+' transaksi · '+av.length+' stok tersedia · '+sold.length+' terjual';
  const rc=D.slice().sort(ord).slice(0,4);
- $('stk').innerHTML=rc.length?rc.map(t=>{const f=fin(t),p=lb(t);return `<div class="sk" data-e="${t.id}"><div class="sc"><span class="gb">${esc(t.game)}</span> <span class="bd ${t.status}">${t.status}</span><b>${esc(t.name)}</b><div class="mu" style="font-size:11px">Modal ${rp(t.buy)} · ${fd(t.date)}</div></div><div class="rt"><b>${rp(f)}</b>${t.status==='Terjual'?`<div class="${p<0?'neg':'pos'}" style="font-size:12px;font-weight:700">${p<0?'':'+'}${rp(p)}</div>`:`<div class="mu" style="font-size:11px">Target</div>`}</div></div>`}).join(''):'<p class="mu" style="text-align:center">Belum ada data transaksi. Ketuk tombol + untuk mulai mencatat.</p>';
+ $('stk').innerHTML=rc.length?rc.map(t=>{const f=fin(t),p=lb(t);return `<div class="sk" data-e="${t.id}"><div class="sc"><span class="gb">${esc(t.game)}</span> <span class="bd ${t.status}">${t.status}</span><b>${esc(t.name)}</b><div class="mu" style="font-size:11px">Modal ${rp(t.buy)} · ${fd(t.date)}</div>${t.status==='Tersedia'?`<div style="margin-top:8px"><button class="btn ok sm" data-s="${t.id}|Terjual">✓ Tandai terjual</button></div>`:''}</div><div class="rt"><b>${rp(f)}</b>${t.status==='Terjual'?`<div class="${p<0?'neg':'pos'}" style="font-size:12px;font-weight:700">${p<0?'':'+'}${rp(p)}</div>`:`<div class="mu" style="font-size:11px">Target</div>`}</div></div>`}).join(''):'<p class="mu" style="text-align:center">Belum ada data transaksi. Ketuk tombol + untuk mulai mencatat.</p>';
  chart($('ch1'),group(cmode));
 }
 $('stats').onclick=e=>{const c=e.target.closest('[data-go]');if(!c)return;$('fs').value=c.dataset.go==='ALL'?'':c.dataset.go;show('tx');list()};
-$('stk').onclick=e=>{const c=e.target.closest('[data-e]');if(c)openForm(D.find(t=>t.id===c.dataset.e))};
+$('stk').onclick=e=>{if(e.target.closest('[data-s]')){act(e);return}const c=e.target.closest('[data-e]');if(c)openForm(D.find(t=>t.id===c.dataset.e))};
 $('add2').onclick=$('add3').onclick=()=>openForm();$('tolist').onclick=$('allst').onclick=()=>show('tx');
 document.querySelectorAll('#seg1 button').forEach(b=>b.onclick=()=>{cmode=b.dataset.m;document.querySelectorAll('#seg1 button').forEach(x=>x.classList.toggle('on',x===b));dash()});
 
